@@ -117,9 +117,7 @@ Affiche le nom complet de la machine .
 ```bash
 cat /etc/apt/sources.list | grep -v -E '^#|^$'
 ```
-**Résultat obtenu :**
-deb http://deb.debian.org/debian bookworm main
-deb http://security.debian.org/debian-security bookworm-security main
+
 **Explication :**
 Affiche uniquement les dépôts actifs, confirmant l’utilisation des dépôts officiels Debian.
 ### Comptes utilisateurs et mots de passe
