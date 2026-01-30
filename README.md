@@ -120,7 +120,7 @@ cat /etc/apt/sources.list | grep -v -E '^#|^$'
 
 **Explication :**
 Affiche uniquement les dépôts actifs, confirmant l’utilisation des dépôts officiels Debian.
-### Comptes utilisateurs et mots de passe
+#### Comptes utilisateurs et mots de passe
 ```bash
 cat /etc/passwd | grep -vE 'nologin|sync'
 cat /etc/shadow | grep -vE ':\*:|:!\*:'
@@ -130,3 +130,183 @@ cat /etc/shadow | grep -vE ':\*:|:!\*:'
 
 /etc/shadow → comptes avec mot de passe actif
 Seul le compte root est actif sur cette installation .
+#### Vérification des partitions
+```bash
+fdisk -l
+fdisk -x
+```
+**Explication :**
+Vérifie la structure, taille et points de montage des partitions.
+#### Vérification de l’espace disque
+```bash
+df -h
+```
+**Explication :**
+La commande df -h affiche l’espace disque utilisé et disponible sur les différents systèmes de fichiers, avec des tailles lisibles (option -h)
+### 3.1 installation automatique
+#### preseed : `a quoi cela sert ?
+Un fichier *preseed* permet d’automatiser l’installation de Debian en fournissant à l’avance toutes les réponses de l’installateur (langue, partitionnement, utilisateurs, paquets, etc.), sans intervention de l’utilisateur.
+### 3.2 rescue mode
+**Explication :**
+Debian fournit un mode de secours (Rescue mode) permettant d’intervenir sur un système installé, même sans connaître le mot de passe root.
+**Procédure :** 
+```bash
+Démarrer la machine avec l’ISO Debian
+
+Choisir Advanced options
+
+Sélectionner Rescue mode
+
+Choisir la partition racine (/)
+
+Sélectionner Drop to shell
+```
+#### Commande pour changer le mot de passe root
+```bash
+passwd root
+```
+#### Redémarrage du système
+```bash
+reboot
+```
+Cette méthode permet de récupérer l’accès administrateur sans réinstallation du système
+### 3.3 redimentionnement partition
+#### Question : Comment redimensionner la partition racine sans réinstaller le système ?
+**Méthodes possibles et Exemple :**
+```bash
+parted /dev/sda resizepart 1 20G
+resize2fs /dev/sda1
+df -h
+```
+parted modifie la taille de la partition
+
+resize2fs ajuste la taille du système de fichiers ext4
+
+df -h permet de vérifier le nouvel espace disponible
+### 3.4 Configuration d’un proxy (Squid)
+
+Un serveur proxy est un serveur intermédiaire entre les clients et Internet.  
+Il permet de contrôler les accès réseau, d’améliorer la sécurité, de mettre en cache des contenus et de réduire la consommation de bande passante.
+
+Dans ce TP, le proxy Squid utilisé est :
+- **Nom :** proxy.ufr-info-p6.jussieu.fr  
+- **Port :** 3128  
+- **Protocoles :** HTTP / HTTPS
+
+---
+
+#### Configuration du proxy pour les outils en ligne de commande (wget, curl, etc.)
+
+Pour rendre le proxy accessible à tous les utilisateurs du système, il est possible de définir des variables d’environnement dans le fichier `/etc/profile`.
+
+```bash
+export http_proxy="http://proxy.ufr-info-p6.jussieu.fr:3128"
+export https_proxy="http://proxy.ufr-info-p6.jussieu.fr:3128"
+export ftp_proxy="http://proxy.ufr-info-p6.jussieu.fr:3128"
+export RSYNC_PROXY="proxy.ufr-info-p6.jussieu.fr:3128"
+```
+Pour les outils en ligne de commande, le proxy est défini via des variables d’environnement dans `/etc/profile`.  
+Pour le gestionnaire de paquets APT, la configuration se fait dans `/etc/apt/apt.conf` afin de permettre les mises à jour à travers le proxy.
+# TP 02 – Services, processus signaux
+## 1 Secure Shell : SSH
+### 1.1 Exercice : Connection ssh root (reprise fin tp-01)
+#### Installation du service SSH
+
+**Commande :**
+```bash
+apt search openssh-server
+apt install openssh-server
+```
+**Explication :**
+Le paquet openssh-server permet d’installer le service SSH afin d’autoriser les connexions distantes sécurisées vers la machine.
+Configuration de SSH pour autoriser root avec mot de passe
+
+Le fichier de configuration du serveur SSH est :
+
+/etc/ssh/sshd_config
+
+Les directives modifiées sont :
+```bash
+PermitRootLogin yes
+PasswordAuthentication yes
+```
+#### Après modification :
+```bash
+systemctl restart ssh
+```
+#### Explication des options (man sshd_config)
+PermitRootLogin
+
+#### Options possibles :
+
+    yes : autorise la connexion root par SSH
+
+    no : interdit totalement la connexion root
+
+    prohibit-password : autorise root uniquement par clé SSH
+
+    forced-commands-only : autorise root seulement pour des commandes forcées
+
+#### Avantages / Inconvénients :
+
+    yes : simple mais peu sécurisé
+
+    prohibit-password : recommandé (clé SSH uniquement)
+
+    no : très sécurisé mais nécessite un autre compte administrateur
+
+#### Choix 
+yes, afin de valider la connexion root demandée dans l’exercice.
+PasswordAuthentication
+
+Options :
+
+    yes : autorise l’authentification par mot de passe
+
+    no : interdit l’authentification par mot de passe
+
+#### Avantage :
+
+    Simple à utiliser
+
+#### Inconvénient :
+
+    Vulnérable aux attaques par force brute
+
+### 1.2 Exercice : Authentification par clef / G´en´eration de clefs
+#### Génération du couple de clés sur la machine hôte
+
+**Commande :**
+```bash
+ssh-keygen
+```
+**Explication :**
+Lors de l’exécution de la commande `ssh-keygen`, OpenSSH génère par défaut une paire de clés utilisant l’algorithme **ED25519**.
+
+Les fichiers générés sont :
+- Clé privée : `~/.ssh/id_ed25519`
+- Clé publique : `~/.ssh/id_ed25519.pub`
+Une clé SSH permet une authentification forte sans mot de passe.
+Dans un contexte réel, ne pas utiliser de passphrase est une mauvaise pratique car toute personne ayant accès à la clé privée pourrait se connecter au serveur
+
+### 1.3 Authentification par clé – Connexion au serveur
+#### Création du répertoire `.ssh` pour root
+
+Sur le serveur, connecté en root :
+
+```bash
+mkdir -p /root/.ssh
+```
+**Explication :**
+Le répertoire .ssh contient les fichiers de configuration SSH propres à l’utilisateur, notamment les clés autorisées pour la connexion.
+#### Ajout de la clé publique dans authorized_keys
+
+```bash
+mkdir -p /root/.ssh
+```
+**Vérifier qu’il existe**
+```bash
+ls -ld /root/.ssh
+```
+**Résultat**
+drwx------ 2 root root 4096 Jan 30 2026 /root/.ssh
