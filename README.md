@@ -300,13 +300,80 @@ mkdir -p /root/.ssh
 **Explication :**
 Le répertoire .ssh contient les fichiers de configuration SSH propres à l’utilisateur, notamment les clés autorisées pour la connexion.
 #### Ajout de la clé publique dans authorized_keys
-
 ```bash
-mkdir -p /root/.ssh
+nano /root/ .ssh/authorized_keys
+```
+**Ajout des autorisations**
+```bash
+chmod 700 /root/ .ssh
 ```
 **Vérifier qu’il existe**
 ```bash
-ls -ld /root/.ssh
+ls -l /root/.ssh/authorized_keys
 ```
 **Résultat**
-drwx------ 2 root root 4096 Jan 30 2026 /root/.ssh
+rw------ 1 root root 93 2 févr. 11:39 authorized_keys 2026 
+### 1.4 Exercice : Authentification par clef : depuis la machine hote
+
+La connexion SSH au serveur testée par la clé correspondante
+```bash
+ssh -i /root/ .ssh/id_ed25519 root@127.0.0.1
+```
+**Résultat**
+```bash
+Linux debian 6.12.63+deb13-amd64 #1 SMP PREEMPT_DYNAMIC Debian 6.12.63-1 (2025-12-30) x86_64
+Last login: Mon Feb  2 11:32:25 2026 from 127.0.0.1
+root@debian:~#
+```
+**Conclusion**
+La connexion s'effectue sans demande de mot passe, ce qui confirme que l'authentification SSH par clé publique est 
+bien configurée.
+### 1.5 Exercice : Sécurisation de l’accès SSH
+
+#### Sécurisation de l’accès SSH pour root par clé uniquement
+Afin d’éviter les tentatives d’authentification par brute-force sur le service SSH, l’accès distant au compte root a été sécurisé pour n’autoriser **que l’authentification par clé**.
+
+La procédure consiste à modifier le fichier de configuration du démon SSH :
+```bash
+nano /etc/ssh/sshd_config
+```
+Les directives suivantes ont été configurées :
+```bash
+PermitRootLogin prohibit-password
+PasswordAuthentication no
+PubkeyAuthentication yes
+
+```
+PermitRootLogin prohibit-password : autorise la connexion root uniquement par clé publique.
+
+PasswordAuthentication no : désactive complètement l’authentification par mot de passe.
+
+PubkeyAuthentication yes : active l’authentification par clé publique.
+**Une fois les modifications effectuées, le service SSH a été redémarré :**
+```bash
+systemctl restart ssh
+```
+**Résultat**
+Les connexions root par mot de passe sont refusées, ce qui empêche toute tentative d’attaque automatisée basée sur des mots de passe.
+#### Autres techniques de protection contre les attaques SSH
+#### Changer le port SSH par défaut
+Modifier le port SSH (22) réduit le nombre de scans automatisés.
+
+Avantage : diminue le bruit et les attaques opportunistes.
+
+Inconvénient : ne constitue pas une vraie protection contre une attaque ciblée.
+#### Restriction par adresse IP
+
+Limiter les connexions SSH à une liste d’adresses IP connues via un pare-feu (iptables / nftables).
+
+Avantage : très sécurisé.
+
+Inconvénient : peu flexible si l’administrateur se connecte depuis plusieurs réseaux.
+
+#### Désactivation de l’accès SSH pour root
+
+Créer un utilisateur administrateur classique et interdire complètement la connexion root distante.
+
+Avantage : réduit fortement la surface d’attaque.
+
+Inconvénient : nécessite une gestion supplémentaire des droits (sudo).
