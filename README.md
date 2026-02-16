@@ -377,3 +377,92 @@ Créer un utilisateur administrateur classique et interdire complètement la con
 Avantage : réduit fortement la surface d’attaque.
 
 Inconvénient : nécessite une gestion supplémentaire des droits (sudo).
+## 2 Processus
+### 2.1 Exercice : Etude des processus UNIX
+#### 1 - Affichage des processus avec la commande ps
+
+Afin d’afficher tous les processus en cours d’exécution avec les informations demandées, j’ai utilisé la commande suivante :
+
+```bash
+ps -eo user,pid,%cpu,%mem,stat,start,time,command
+```
+
+#### TIME correspond au temps processeur total consommé par le processus depuis son lancement.
+
+#### Pour identifier le processus ayant le plus utilisé le processeur, j’ai utilisé la commande :
+```bash
+ps -eo pid,user,%cpu,%mem,stat,start,time,command --sort=-%cpu | head
+```
+#### Sur ma machine, il s’agissait du processus top avec une utilisation de 0.7 % CPU, car l’analyse était en cours au moment de la mesure.
+#### Le premier processus lancé est celui ayant le PID 1 :
+```bash
+ps -p 1 -o pid,command
+```
+
+***Résultat :***
+```bash
+PID COMMAND
+1   /sbin/init
+```
+
+#### A quelle heure la machine a-t-elle démarré ?
+***Commande utilisée :***
+
+```bash
+who -b
+```
+***Résultat :***
+```bash
+démarrage système 2026-02-16 10:33
+```
+#### Depuis combien de temps le serveur tourne-t-il ?
+
+```bash
+uptime
+```
+Cette commande affiche :
+
+l’heure actuelle
+
+le temps écoulé depuis le démarrage (uptime)
+
+le nombre d’utilisateurs connectés
+
+la charge système
+***Résultat :***
+```bash
+11:34:13 up 1:30, 1 user, load average: 0,00 0,00 0,00
+```
+
+#### Nombre approximatif de processus créés depuis le boot
+```bash
+ps -e | wc -l
+```
+***Résultat :***
+```bash
+220
+```
+#### 2 -Processus père et PPID
+
+#### Afficher le PPID
+```bash
+ps -eo pid,ppid,command
+```
+#### Liste ordonnée des ancêtres de la commande ps
+```bash
+ps -ejH
+```
+### 3 Utilisation de pstree
+
+```bash
+pstree -p
+```
+**Explication :**
+Cette commande affiche l’arborescence complète des processus avec leurs PID.
+Avantage : représentation plus claire et visuelle que ps.
+### 4 Utilisation de top
+```bash
+top
+```
+**Explication :**
+La commande top affiche les processus en temps réel, avec mise à jour périodique.
