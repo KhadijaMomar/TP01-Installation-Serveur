@@ -466,3 +466,437 @@ top
 ```
 **Explication :**
 La commande top affiche les processus en temps réel, avec mise à jour périodique.
+
+**Trier par occupation mémoire décroissante**
+```bash
+M
+```
+Cela trie les processus selon la mémoire résidente
+**Processus le plus gourmand :**
+Le processus le plus gourmand en ressources sur ma machine est systemd.
+Il s’agit du processus d’initialisation du système (PID 1), lancé au démarrage par le noyau Linux.
+Il est responsable du lancement et de la gestion des services système ainsi que de la supervision des processus.
+Sa présence en tête de liste est normale, car il est constamment actif et coordonne l’ensemble du fonctionnement du système.
+**Commandes interactives dans top:**
+
+z : activer/désactiver l’affichage en couleur
+
+R : inverser l’ordre de tri
+
+O : choisir la colonne de tri
+
+? : afficher l’aide
+
+**Utilisation de htop**
+
+Installation :
+ ```bash
+apt install htop
+```
+Commande :
+```bash
+htop
+```
+**Avantages de htop par rapport à top**
+
+-Interface plus claire et colorée
+
+-Navigation avec les flèches
+
+-Sélection et arrêt de processus plus simple
+
+-Tri plus intuitif (F6 pour choisir la colonne)
+
+-Inconvénients
+
+-Non installé par défaut
+
+-Consomme légèrement plus de ressources
+
+---
+
+## 3 Arret d’un processus
+### Création des scripts
+
+#### Fichier date.sh
+**Explication des scripts**
+
+#!/bin/sh : indique l’interpréteur utilisé.
+
+while true : boucle infinie.
+
+sleep 1 : pause d’une seconde.
+
+echo -n : affiche sans retour à la ligne.
+
+date +%T : affiche l’heure au format HH:MM:SS.
+
+date --date '5 hour ago' : affiche l’heure 5 heures en arrière.
+
+Ces scripts simulent deux horloges s’exécutant en continu.
+
+--- 
+
+## 4 Les tubes
+### Différence entre tee et cat
+-cat lit une entrée et l’affiche sur la sortie standard.
+
+-tee lit une entrée, l’affiche ET l’enregistre dans un fichier.
+
+---
+
+**Explication des commandes**
+ ```bash
+$ ls | cat
+ ```
+Affiche simplement le contenu du répertoire.
+ ```bash
+$ ls -l | cat > liste
+ ```
+Liste détaillée des fichiers
+
+Redirige la sortie vers le fichier "liste"
+
+Rien ne s’affiche à l’écran
+ ```bash
+$ ls -l | tee liste
+ ```
+Affiche le résultat à l’écran
+
+Enregistre également dans le fichier "liste"
+ ```bash
+$ ls -l | tee liste | wc -l
+ ```
+Affiche la liste
+
+L’enregistre dans "liste"
+
+Compte le nombre de lignes (nombre d’éléments)
+
+---
+
+## 5 Journal système rsyslog
+### Avant installation :
+
+La commande dpkg -l | grep rsyslog ne retourne aucun résultat, ce qui signifie que le service rsyslog n’était pas installé sur le système.
+
+---
+
+### Après installation :
+
+J’ai installé le service avec la commande apt install rsyslog.
+Après installation, la commande systemctl status rsyslog indique que le service est actif (running) avec le PID [1019].
+
+---
+
+### Les messages standards sont généralement écrits dans :
+
+/var/log/syslog
+
+ou
+
+/var/log/messages
+
+Vérification à l'aide de cette commande :
+ ```bash
+cat /var/log/syslog
+ ```
+### Service cron
+
+Le service cron permet de planifier l’exécution automatique de tâches à des horaires définis.
+
+Exemple : sauvegardes automatiques, scripts planifiés, mises à jour.
+
+---
+
+### Commande tail -f
+ ```bash
+tail -f /var/log/messages
+ ```
+Cette commande affiche en temps réel les nouvelles lignes ajoutées au fichier.
+
+Si l’on redémarre cron dans un autre terminal :
+ ```bash
+systemctl restart cron
+ ```
+On observe un message indiquant :
+
+l’arrêt du service
+
+puis son redémarrage
+
+Cela confirme que rsyslog enregistre les événements système.
+
+---
+
+### Fichier /etc/logrotate.conf
+
+Ce fichier permet de gérer la rotation des journaux :
+
+Compression des anciens logs
+
+Suppression après un certain délai
+
+Limitation de taille
+
+Archivage automatique
+
+Cela évite que les fichiers journaux saturent l’espace disque.
+
+---
+
+### Commande dmesg
+ ```bash
+dmesg
+ ```
+Affiche les messages du noyau Linux au démarrage.
+
+On peut y identifier :
+
+Le modèle du processeur détecté
+
+Les cartes réseau reconnues
+
+Les périphériques matériels
+
+Exemple typique :
+
+CPU : Intel(R) Core(TM) i5-8250U
+
+Carte réseau : Intel Ethernet Connection I219-V
+
+---
+
+# TP 03 – Shell bash
+
+## Exercice1 : paramètres
+
+### Script : analyse.sh
+ ```bash
+#!/bin/bash
+
+echo "Bonjour, vous avez rentré $# paramètres."
+echo "Le nom du script est $0"
+echo "Le 3ème paramètre est $3"
+echo "Voici la liste des paramètres : $@"
+ ```
+
+**Test :**
+ ```bash
+chmod +x analyse.sh
+./analyse.sh a b c d
+```
+
+## Exercice 2 :  vérification du nombre de paramètres
+
+### Script : concat.sh
+ ```bash
+#!/bin/bash
+
+if [ $# -ne 2 ]; then
+    echo "Erreur : vous devez entrer exactement 2 paramètres."
+    exit 1
+fi
+
+CONCAT="$1$2"
+echo "Résultat : $CONCAT"
+ ```
+## Exercice 3 : argument type et droits
+
+### Script : test-fichier.sh
+ ```bash
+#!/bin/bash
+
+if [ $# -ne 1 ]; then
+    echo "Usage : $0 fichier"
+    exit 1
+fi
+
+FIC="$1"
+
+if [ ! -e "$FIC" ]; then
+    echo "Le fichier $FIC n'existe pas."
+    exit 1
+fi
+
+if [ -d "$FIC" ]; then
+    echo "Le fichier $FIC est un répertoire."
+elif [ -f "$FIC" ]; then
+    echo "Le fichier $FIC est un fichier ordinaire."
+fi
+
+if [ -r "$FIC" ]; then
+    echo "Accessible en lecture"
+fi
+
+if [ -w "$FIC" ]; then
+    echo "Accessible en écriture"
+fi
+
+if [ -x "$FIC" ]; then
+    echo "Accessible en exécution"
+fi
+ ```
+
+ ## Exercice 4 : Afficher le contenu d’un répertoire
+
+### Script : listedir.sh
+ ```bash
+#!/bin/bash
+
+if [ $# -ne 1 ]; then
+    echo "Usage : $0 repertoire"
+    exit 1
+fi
+
+DIR="$1"
+
+if [ ! -d "$DIR" ]; then
+    echo "Ce n'est pas un répertoire."
+    exit 1
+fi
+
+echo "####### fichiers dans $DIR/"
+for f in "$DIR"/*; do
+    if [ -f "$f" ]; then
+        echo "$f"
+    fi
+done
+
+echo "####### repertoires dans $DIR/"
+for f in "$DIR"/*; do
+    if [ -d "$f" ]; then
+        echo "$f"
+    fi
+done
+ ```
+ ## Exercice 5 : Lister les utilisateurs
+
+### Script : listUsers.sh
+ ```bash
+#!/bin/bash
+
+cut -d: -f1,3 /etc/passwd | while IFS=: read login uid
+do
+    if [ "$uid" -gt 100 ]; then
+        echo "$login"
+    fi
+done
+ ```
+## Exercice 6 : Mon utilisateur existe t’il
+### Script : verifUser.sh
+ ```bash
+#!/bin/bash
+
+if [ $# -ne 1 ]; then
+    echo "Usage : $0 login"
+    exit 1
+fi
+
+LOGIN="$1"
+
+RESULT=$(grep "^$LOGIN:" /etc/passwd)
+
+if [ -n "$RESULT" ]; then
+    echo "$RESULT" | cut -d: -f3
+fi
+```
+## Exercice 7: Creation utilisateur
+### Script : creation-utilisateur.sh
+ ```bash
+ #!/bin/bash
+
+# Vérifier que l'utilisateur est root
+if [ "$USER" != "root" ]; then
+    echo "Erreur : ce script doit être exécuté par root."
+    exit 1
+fi
+
+echo -n "Login : "
+read LOGIN
+
+echo -n "Nom : "
+read NOM
+
+echo -n "Prenom : "
+read PRENOM
+
+echo -n "UID : "
+read UID
+
+echo -n "GID : "
+read GID
+
+echo -n "Commentaires : "
+read COMMENT
+
+if grep -q "^$LOGIN:" /etc/passwd ; then
+    echo "Erreur : l'utilisateur $LOGIN existe déjà."
+    exit 1
+fi
+
+HOME_DIR="/home/$LOGIN"
+
+if [ -d "$HOME_DIR" ]; then
+    echo "Erreur : le répertoire $HOME_DIR existe déjà."
+    exit 1
+fi
+
+# Création de l'utilisateur
+useradd -u "$UID" -g "$GID" -c "$PRENOM $NOM $COMMENT" -m -d "$HOME_DIR" "$LOGIN"
+
+
+if [ $? -eq 0 ]; then
+    echo "Utilisateur $LOGIN créé avec succès."
+else
+    echo "Erreur lors de la création de l'utilisateur."
+fi
+ ```
+## Exercice 8: Lecture au clavier
+### Script : readFile.sh
+ ```bash
+#!/bin/bash
+
+if [ $# -ne 1 ]; then
+    echo "Usage : $0 repertoire"
+    exit 1
+fi
+
+for f in "$1"/*
+do
+    if file "$f" | grep -q "text"; then
+        echo -n "Voulez-vous visualiser le fichier $f ? (o/n) "
+        read REP
+        if [ "$REP" = "o" ]; then
+            more "$f"
+        fi
+    fi
+done
+```
+## Exercice 9 : Appréciation
+### Script : appreciation.sh
+ ```bash
+#!/bin/bash
+
+while true
+do
+    echo -n "Entrez une note (ou q pour quitter) : "
+    read NOTE
+
+    if [ "$NOTE" = "q" ]; then
+        break
+    fi
+
+    if [ "$NOTE" -ge 16 ] && [ "$NOTE" -le 20 ]; then
+        echo "Très bien"
+    elif [ "$NOTE" -ge 14 ]; then
+        echo "Bien"
+    elif [ "$NOTE" -ge 12 ]; then
+        echo "Assez bien"
+    elif [ "$NOTE" -ge 10 ]; then
+        echo "Moyen"
+    else
+        echo "Insuffisant"
+    fi
+done
+ ```
